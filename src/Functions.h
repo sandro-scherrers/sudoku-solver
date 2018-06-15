@@ -4,6 +4,7 @@
 #include <bitset>
 #include <array>
 #include <algorithm>
+#include <random>
 
 using namespace std;
 
@@ -241,7 +242,17 @@ int checkSums(vector< vector<int> > inputLists) {
 
 vector< vector<int> > sudokuSolver(vector< vector<int> > inputSudoku) {
 
-	bool matchingSums = false;
+	// Random seed
+	random_device rd;
+
+	// Initialize Mersenne Twister pseudo-random number generator
+	mt19937 gen(rd());
+
+	// Generate pseudo-random numbers
+	// uniformly distributed in range (1, 9)
+	uniform_int_distribution<> dis(1, 9);
+
+	bool sudokuUnsolved = true;
 	int iter = 1;
 
 	int sudokuField, checkSum;
@@ -258,14 +269,14 @@ vector< vector<int> > sudokuSolver(vector< vector<int> > inputSudoku) {
 	bool isNotOk, wrongGuess;
 	int nbRandoms;
 
-	while(not matchingSums) {
+	while(iter  < 1e5 && sudokuUnsolved) {
 		iter++;
+//		cout << iter << endl;
 
 
 		wrongGuess = false;
 		// fill sudoku randomly
 		for(i=0; i< 9; i++) {
-//			cout << iter << endl;
 
 
 			for(j=0; j< 9; j++) {
@@ -275,7 +286,7 @@ vector< vector<int> > sudokuSolver(vector< vector<int> > inputSudoku) {
 					isNotOk = true;
 					nbRandoms = 0;
 					while(isNotOk) {
-						int randValue = 1 + rand() % 9;
+						randValue = dis(gen);
 						nbRandoms++;
 //						cout << "randValue" << randValue << endl;
 
@@ -312,14 +323,24 @@ vector< vector<int> > sudokuSolver(vector< vector<int> > inputSudoku) {
 							}
 						}
 						if(nbRandoms == 30) {
-							break;
-							cout << "iter: " << iter << endl;
-							cout << i << j << endl;
+//							cout << "iter: " << iter << endl;
+//							cout << i << j << endl;
 							wrongGuess = true;
+							break;
+							//
 						}
-	//					cout << endl;
-						inputSudoku[i][j] = randValue;
 					}
+//					cout << endl;
+					if(not isNotOk) {
+						inputSudoku[i][j] = randValue;
+						cout << randValue << endl;
+						if(i == 8 && j == 8) cout << "we found it" << endl;
+					}
+					if(isNotOk) {
+//						cout << i << j << endl;
+						break;
+					}
+
 					if(wrongGuess) break;
 //					cout << inputSudoku[i][j] << endl;
 				}
@@ -335,12 +356,12 @@ vector< vector<int> > sudokuSolver(vector< vector<int> > inputSudoku) {
 
 		// calculate rows, columns, squares
 //		cout << "checksum" << checkSums(getRows(inputSudoku, vec, rows, h, q)) << endl;
-		checkSum = checkSums(getRows(inputSudoku, vec, rows, h, q)) + checkSums(getColumns(inputSudoku, vec, columns, h, q));
-		if(checkSum == 2) {
-			matchingSums = true;
+		checkSum = checkSums(getRows(inputSudoku, vec, rows, h, q)) + checkSums(getColumns(inputSudoku, vec, columns, h, q)) + checkSums(getSquares(inputSudoku, vec, rows, h, q, k, l));
+		if(checkSum == 3) {
+			sudokuUnsolved = false;
 			cout << "Sudoku solved!" << endl;
-		}
-		if(iter == 1e32) break;
+		} else sudokuUnsolved = true;
+//		if(iter == 1e32) break;
 
 	}
 
