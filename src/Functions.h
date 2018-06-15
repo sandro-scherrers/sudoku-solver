@@ -5,6 +5,7 @@
 #include <array>
 #include <algorithm>
 #include <random>
+#include <time.h>
 
 using namespace std;
 
@@ -137,6 +138,20 @@ int countOccurances(int* inputColumn, int number) {
 	return counter;
 }
 
+int countZeros(vector< vector<int> > inputSudoku) {
+	int counter = 0;
+	int i, j;
+
+	for(i=0; i<9;i++) {
+		for(j=0; j<9;j++) {
+			if(inputSudoku[i][j] == 0) counter++;
+		}
+	}
+
+	return counter;
+}
+
+
 int** findMissingValues(int* inputColumn) {
 	int** outputColumn = 0;
 	vector<int> possibilities = {1, 2, 3, 4, 5, 6, 7, 8, 9};
@@ -255,6 +270,148 @@ vector< vector<int> > sudokuSolver(vector< vector<int> > inputSudoku) {
 	bool sudokuUnsolved = true;
 	int iter = 1;
 
+
+	auto solvedSudoku = inputSudoku;
+	int sudokuField, checkSum, valuePossible;
+	int i, j, k, h, q, l, randValue, trials;
+	vector< vector<int> > rows(9, vector<int>(9));
+	vector< vector<int> > columns(9, vector<int>(9));
+	vector< vector<int> > squares(9, vector<int>(9));
+
+	vector<int> thisRow(9);
+	vector<int> thisColumn(9);
+	vector<int> thisSquare(9);
+
+	vector< vector<int> > * vec = new vector< vector<int> >(9, vector<int>(9));
+	bool isNotOk, wrongGuess;
+	int nbRandoms, breakValue = 0;
+	int solvedFields = 0;
+
+	int emptyFields = countZeros(inputSudoku);
+	cout << "this soduku contains " << emptyFields << " empty fields (" << emptyFields/81. << "% empty)" << endl;
+
+	while(iter  < 1e5 && sudokuUnsolved) {
+		iter++;
+//		cout << iter << endl;
+
+
+		wrongGuess = false;
+		// fill sudoku randomly
+		for(i=0; i< 9; i++) {
+			for(j=0; j< 9; j++) {
+				sudokuField = solvedSudoku[i][j];
+//				cout << i << j << endl;
+				if(sudokuField == 0) {
+					isNotOk = true;
+					nbRandoms = 0;
+					valuePossible = 0;
+					trials = 0;
+					while(nbRandoms < 30) {
+						trials++;
+						randValue = dis(gen);
+						nbRandoms++;
+//						cout << "randValue" << randValue << endl;
+
+						// check if randValue is valid
+						rows = getRows(solvedSudoku, vec, rows, h, q);
+						columns = getColumns(solvedSudoku, vec, columns, h, q);
+						squares = getSquares(solvedSudoku, vec, columns, h, q, k, l);
+
+//						for(int i=0;i<9;i++) cout << (rows)[1][i];
+//						cout << endl;
+
+
+						if(0 <= i && i <= 2) {l = 0;}
+						if(3 <= i && i <= 5) {l = 3;}
+						if(6 <= i && i <= 8) {l = 6;}
+
+						if(0 <= j && j <= 2) {q = 0;}
+						if(3 <= j && j <= 5) {q = 1;}
+						if(6 <= j && j <= 8) {q = 2;}
+
+						thisSquare = squares[l + q];
+						thisRow = rows[i];
+						thisColumn = columns[j];
+
+						//						cout << "ij" << i << j << "\tsquare" << l + q << endl;
+											// check if randValue is in rows or columns
+						isNotOk = false;
+						for(k=0; k<9; k++) {
+							if(thisRow[k] == randValue || thisColumn[k] == randValue || thisSquare[k] == randValue) {
+								isNotOk = true;
+							}
+						}
+						if(not isNotOk) valuePossible++;
+//						if(nbRandoms == 30) {
+//							cout << "iter: " << iter << endl;
+//							cout << i << j << endl;
+//							wrongGuess = true;
+//							break;
+							//
+//						}
+					}
+
+//					cout << randValue << endl << endl;
+					if(not isNotOk && valuePossible == 1) {
+						solvedSudoku[i][j] = randValue;
+						solvedFields++;
+//						cout << i << j << endl;
+//						cout << valuePossible << endl;
+
+//						cout << i << j << endl;
+//						cout << randValue << endl;
+//						if(i == 8 && j == 8) cout << "we found it" << endl;
+					}
+					if(isNotOk) {
+//						cout << i << j << endl;
+						if(i+j > breakValue) breakValue = i+j;
+						break;
+					}
+
+					if(wrongGuess) break;
+//					cout << inputSudoku[i][j] << endl;
+				}
+				if(wrongGuess) break;
+
+			}
+			if(wrongGuess) break;
+			if(iter == 1e2) break;
+
+		}
+
+//		if(wrongGuess) cout << "wrong guess" << endl;
+
+		// calculate rows, columns, squares
+//		cout << "checksum" << checkSums(getRows(inputSudoku, vec, rows, h, q)) << endl;
+//		checkSum = checkSums(getRows(solvedSudoku, vec, rows, h, q)) + checkSums(getColumns(inputSudoku, vec, columns, h, q)) + checkSums(getSquares(solvedSudoku, vec, rows, h, q, k, l));
+		if(solvedFields == emptyFields) {
+			sudokuUnsolved = false;
+			cout << "Sudoku solved!" << endl;
+		} else sudokuUnsolved = true;
+//		if(iter == 1e32) break;
+
+	}
+
+
+	return solvedSudoku;
+
+}
+
+vector< vector<int> > sudokuSolverBruteforce(vector< vector<int> > inputSudoku) {
+
+	// Random seed
+	random_device rd;
+
+	// Initialize Mersenne Twister pseudo-random number generator
+	mt19937 gen(rd());
+
+	// Generate pseudo-random numbers
+	// uniformly distributed in range (1, 9)
+	uniform_int_distribution<> dis(1, 9);
+
+	bool sudokuUnsolved = true;
+	int iter = 1;
+
 	auto solvedSudoku = inputSudoku;
 	int sudokuField, checkSum;
 	int i, j, k, h, q, l, randValue;
@@ -270,7 +427,7 @@ vector< vector<int> > sudokuSolver(vector< vector<int> > inputSudoku) {
 	bool isNotOk, wrongGuess;
 	int nbRandoms, breakValue = 0;
 
-	while(iter  < 1e5 && sudokuUnsolved) {
+	while(iter  < 1e4 && sudokuUnsolved) {
 		iter++;
 		solvedSudoku = inputSudoku;
 //		cout << iter << endl;
@@ -357,11 +514,11 @@ vector< vector<int> > sudokuSolver(vector< vector<int> > inputSudoku) {
 
 		// calculate rows, columns, squares
 //		cout << "checksum" << checkSums(getRows(inputSudoku, vec, rows, h, q)) << endl;
-		checkSum = checkSums(getRows(solvedSudoku, vec, rows, h, q)) + checkSums(getColumns(inputSudoku, vec, columns, h, q)) + checkSums(getSquares(solvedSudoku, vec, rows, h, q, k, l));
-		if(checkSum == 3) {
-			sudokuUnsolved = false;
-			cout << "Sudoku solved!" << endl;
-		} else sudokuUnsolved = true;
+//		checkSum = checkSums(getRows(solvedSudoku, vec, rows, h, q)) + checkSums(getColumns(inputSudoku, vec, columns, h, q)) + checkSums(getSquares(solvedSudoku, vec, rows, h, q, k, l));
+//		if(checkSum == 3) {
+//			sudokuUnsolved = false;
+//			cout << "Sudoku solved!" << endl;
+//		} else sudokuUnsolved = true;
 //		if(iter == 1e32) break;
 
 	}
