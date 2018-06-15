@@ -272,7 +272,7 @@ vector< vector<int> > sudokuSolver(vector< vector<int> > inputSudoku) {
 
 
 	auto solvedSudoku = inputSudoku;
-	int sudokuField, checkSum, valuePossible;
+	int sudokuField, checkSum, valuePossible, fillValue;
 	int i, j, k, h, q, l, randValue, trials;
 	vector< vector<int> > rows(9, vector<int>(9));
 	vector< vector<int> > columns(9, vector<int>(9));
@@ -288,38 +288,24 @@ vector< vector<int> > sudokuSolver(vector< vector<int> > inputSudoku) {
 	int solvedFields = 0;
 
 	int emptyFields = countZeros(inputSudoku);
-	cout << "this soduku contains " << emptyFields << " empty fields (" << emptyFields/81. << "% empty)" << endl;
+	cout << "this soduku contains " << emptyFields << " empty fields (" << emptyFields/81.*100. << "% empty)" << endl;
 
-	while(iter  < 1e5 && sudokuUnsolved) {
+	while(sudokuUnsolved) {
 		iter++;
-//		cout << iter << endl;
-
-
-		wrongGuess = false;
-		// fill sudoku randomly
 		for(i=0; i< 9; i++) {
 			for(j=0; j< 9; j++) {
 				sudokuField = solvedSudoku[i][j];
-//				cout << i << j << endl;
-				if(sudokuField == 0) {
-					isNotOk = true;
-					nbRandoms = 0;
-					valuePossible = 0;
-					trials = 0;
-					while(nbRandoms < 30) {
-						trials++;
-						randValue = dis(gen);
-						nbRandoms++;
-//						cout << "randValue" << randValue << endl;
 
-						// check if randValue is valid
+				if(sudokuField == 0) {
+					valuePossible = 0;
+					fillValue = 0;
+
+					for(randValue=1; randValue<10; randValue++) {
+
+
 						rows = getRows(solvedSudoku, vec, rows, h, q);
 						columns = getColumns(solvedSudoku, vec, columns, h, q);
 						squares = getSquares(solvedSudoku, vec, columns, h, q, k, l);
-
-//						for(int i=0;i<9;i++) cout << (rows)[1][i];
-//						cout << endl;
-
 
 						if(0 <= i && i <= 2) {l = 0;}
 						if(3 <= i && i <= 5) {l = 3;}
@@ -333,63 +319,35 @@ vector< vector<int> > sudokuSolver(vector< vector<int> > inputSudoku) {
 						thisRow = rows[i];
 						thisColumn = columns[j];
 
-						//						cout << "ij" << i << j << "\tsquare" << l + q << endl;
-											// check if randValue is in rows or columns
 						isNotOk = false;
 						for(k=0; k<9; k++) {
 							if(thisRow[k] == randValue || thisColumn[k] == randValue || thisSquare[k] == randValue) {
 								isNotOk = true;
 							}
 						}
-						if(not isNotOk) valuePossible++;
-//						if(nbRandoms == 30) {
-//							cout << "iter: " << iter << endl;
-//							cout << i << j << endl;
-//							wrongGuess = true;
-//							break;
-							//
-//						}
-					}
 
-//					cout << randValue << endl << endl;
-					if(not isNotOk && valuePossible == 1) {
-						solvedSudoku[i][j] = randValue;
+						if(not isNotOk) {
+//							cout << randValue << " ";
+							valuePossible++;
+							fillValue = randValue;
+						}
+
+
+					}
+//					cout << endl;
+					if(fillValue != 0 && valuePossible == 1) {
+						solvedSudoku[i][j] = fillValue;
 						solvedFields++;
-//						cout << i << j << endl;
-//						cout << valuePossible << endl;
-
-//						cout << i << j << endl;
-//						cout << randValue << endl;
-//						if(i == 8 && j == 8) cout << "we found it" << endl;
+						cout << i << j << endl;
 					}
-					if(isNotOk) {
-//						cout << i << j << endl;
-						if(i+j > breakValue) breakValue = i+j;
-						break;
-					}
-
-					if(wrongGuess) break;
-//					cout << inputSudoku[i][j] << endl;
 				}
-				if(wrongGuess) break;
-
 			}
-			if(wrongGuess) break;
-			if(iter == 1e2) break;
-
 		}
 
-//		if(wrongGuess) cout << "wrong guess" << endl;
-
-		// calculate rows, columns, squares
-//		cout << "checksum" << checkSums(getRows(inputSudoku, vec, rows, h, q)) << endl;
-//		checkSum = checkSums(getRows(solvedSudoku, vec, rows, h, q)) + checkSums(getColumns(inputSudoku, vec, columns, h, q)) + checkSums(getSquares(solvedSudoku, vec, rows, h, q, k, l));
 		if(solvedFields == emptyFields) {
 			sudokuUnsolved = false;
 			cout << "Sudoku solved!" << endl;
 		} else sudokuUnsolved = true;
-//		if(iter == 1e32) break;
-
 	}
 
 
