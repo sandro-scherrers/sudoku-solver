@@ -18,13 +18,13 @@ int main() {
 	vector< vector<int> > inputSudoku = createSudoku();
 	vector< vector<int> > solvedSudoku = createSudoku();
 
-	testFillSudoku2(inputSudoku);
+	inputSudoku =testFillSudoku2(inputSudoku);
 
 	cout << "input sudoku" << endl;
 	printSudoku(inputSudoku);
 
-//	solvedSudoku = sudokuSolver(inputSudoku);
-	cout << "solved sudoku" << endl;
+	solvedSudoku = sudokuSolver(inputSudoku);
+	cout << "output sudoku" << endl;
 	printSudoku(solvedSudoku);
 
 

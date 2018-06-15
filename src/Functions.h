@@ -110,7 +110,7 @@ vector< vector<int> > testFillSudoku2(vector< vector<int> > inputSudoku) {
 	return inputSudoku;
 }
 
-void printSudoku(int** inputSudoku) {
+void printSudoku(vector< vector<int> > inputSudoku) {
 	int sudokuSize = 9;
 	cout << "-------------------------------------" << endl;
 
@@ -151,45 +151,32 @@ int** findMissingValues(int* inputColumn) {
 
 
 
-void getRows(vector< vector<int> > inputSudoku, vector< vector<int> > * vec, vector< vector<int> > rows, int h, int q) {
-	for (h = 0; h < 9; h++) {
-		for (q = 0; q < 9; q++) {
-			*vec[h][q] = inputSudoku[h][q];
-		}
-	}
+vector< vector<int> > getRows(vector< vector<int> > inputSudoku, vector< vector<int> > * vec, vector< vector<int> > rows, int h, int q) {
 	vec = &rows;
-}
-
-void getColumns(vector< vector<int> > inputSudoku, vector< vector<int> > * vec, vector< vector<int> > columns, int h, int q) {
 	for (h = 0; h < 9; h++) {
 		for (q = 0; q < 9; q++) {
-			*vec[h][q] = inputSudoku[q][h];
+			(*vec)[h][q] = inputSudoku[h][q];
 		}
 	}
-	vec = &columns;
+//	for(int i=0;i<9;i++) cout << (rows)[1][i];
+//	cout << endl;
+	return rows;
+
 }
 
-
-//int** getColumns(int** inputSudoku) {
-//	int h, q;
-//	int** columns = 0;
-//	columns = new int*[9];
-//	for (h = 0; h < 9; h++) {
-//		columns[h] = new int[9];
-//		for (q = 0; q < 9; q++) {
-//			columns[h][q] = inputSudoku[q][h];
-//		}
-//	}
-//
-//	return columns;
-//}
-
-int** getSquares(int** inputSudoku) {
-	int h, q, k, l;
-	int** squares = 0;
-	squares = new int*[9];
+vector< vector<int> > getColumns(vector< vector<int> > inputSudoku, vector< vector<int> > * vec, vector< vector<int> > columns, int h, int q) {
+	vec = &columns;
 	for (h = 0; h < 9; h++) {
-		squares[h] = new int[9];
+		for (q = 0; q < 9; q++) {
+			(*vec)[h][q] = inputSudoku[q][h];
+		}
+	}
+	return columns;
+}
+
+vector< vector<int> > getSquares(vector< vector<int> > inputSudoku, vector< vector<int> > * vec, vector< vector<int> > squares, int h, int q, int k, int l) {
+	vec = &squares;
+	for (h = 0; h < 9; h++) {
 		for (q = 0; q < 9; q++) {
 			k = 0;
 
@@ -208,9 +195,34 @@ int** getSquares(int** inputSudoku) {
 	}
 	return squares;
 }
+//
+//int** getSquares(int** inputSudoku) {
+//	int h, q, k, l;
+//	int** squares = 0;
+//	squares = new int*[9];
+//	for (h = 0; h < 9; h++) {
+//		squares[h] = new int[9];
+//		for (q = 0; q < 9; q++) {
+//			k = 0;
+//
+//			if(q > 5) {k = 2;}
+//			else if (q > 2) {k =1;}
+//			else {k = 0;}
+//
+//			if(h > 5) {k += 2*3;}
+//			else if (h > 2) {k +=1*3;}
+//			else {k += 0;}
+//
+//			l = q%3 + h%3*3;
+//
+//			squares[h][q] = inputSudoku[k][l];
+//		}
+//	}
+//	return squares;
+//}
 
 
-int checkSums(int** inputLists) {
+int checkSums(vector< vector<int> > inputLists) {
 	int checkValue = 0;
 
 	for(int i=0; i<9; i++) {
@@ -218,65 +230,117 @@ int checkSums(int** inputLists) {
 		for(int j=0; j<9; j++) {
 			sum += inputLists[i][j];
 		}
-		if(sum == 45) checkValue = 1;
+		if(sum == 45) {
+			checkValue = 1;
+		}
+		else checkValue = 0;
 	}
 
 	return checkValue;
 }
 
-int** sudokuSolver(int** inputSudoku) {
+vector< vector<int> > sudokuSolver(vector< vector<int> > inputSudoku) {
 
 	bool matchingSums = false;
 	int iter = 1;
 
 	int sudokuField, checkSum;
-	int i, j, k, h, q, randValue;
+	int i, j, k, h, q, l, randValue;
 	vector< vector<int> > rows(9, vector<int>(9));
 	vector< vector<int> > columns(9, vector<int>(9));
+	vector< vector<int> > squares(9, vector<int>(9));
 
 	vector<int> thisRow(9);
 	vector<int> thisColumn(9);
+	vector<int> thisSquare(9);
 
-	vector< vector<int> > * vec(9, vector<int>(9));
-	bool isOk;
+	vector< vector<int> > * vec = new vector< vector<int> >(9, vector<int>(9));
+	bool isNotOk, wrongGuess;
+	int nbRandoms;
 
 	while(not matchingSums) {
-
-		cout << iter << endl;
 		iter++;
 
 
+		wrongGuess = false;
 		// fill sudoku randomly
 		for(i=0; i< 9; i++) {
+//			cout << iter << endl;
+
+
 			for(j=0; j< 9; j++) {
 				sudokuField = inputSudoku[i][j];
+//				cout << i << j << endl;
 				if(sudokuField == 0) {
-					randValue = 1 + rand() % 9;
-					// check if randValue is valid
-					thisRow = getRows(inputSudoku, vec, rows, h, q)[i];
-					thisColumn = getColumns(inputSudoku, vec, columns, h, q)[j];
-					// check if randValue is in rows or columns
+					isNotOk = true;
+					nbRandoms = 0;
+					while(isNotOk) {
+						int randValue = 1 + rand() % 9;
+						nbRandoms++;
+//						cout << "randValue" << randValue << endl;
 
-					isOk = true;
-					for(k=0; k<9; k++) {
-						if(thisRow[k] == randValue || thisColumn[k] == randValue) {
-							isOk = false;
+						// check if randValue is valid
+						rows = getRows(inputSudoku, vec, rows, h, q);
+						columns = getColumns(inputSudoku, vec, columns, h, q);
+						squares = getSquares(inputSudoku, vec, columns, h, q, k, l);
+
+//						for(int i=0;i<9;i++) cout << (rows)[1][i];
+//						cout << endl;
+
+						thisRow = rows[i];
+						thisColumn = columns[j];
+
+
+
+						if(0 <= i && i <= 2) {l = 0;}
+						if(3 <= i && i <= 5) {l = 3;}
+						if(6 <= i && i <= 8) {l = 6;}
+
+						if(0 <= j && j <= 2) {q = 0;}
+						if(3 <= j && j <= 5) {q = 1;}
+						if(6 <= j && j <= 8) {q = 2;}
+
+						thisSquare = squares[l + q];
+//						cout << "ij" << i << j << "\tsquare" << l + q << endl;
+											// check if randValue is in rows or columns
+						isNotOk = false;
+						for(k=0; k<9; k++) {
+	//						cout << thisRow[k];
+
+							if(thisRow[k] == randValue || thisColumn[k] == randValue || thisSquare[k] == randValue) {
+								isNotOk = true;
+							}
 						}
+						if(nbRandoms == 30) {
+							break;
+							cout << "iter: " << iter << endl;
+							cout << i << j << endl;
+							wrongGuess = true;
+						}
+	//					cout << endl;
+						inputSudoku[i][j] = randValue;
 					}
-					if(isOk)
-					inputSudoku[i][j] = randValue;
+					if(wrongGuess) break;
+//					cout << inputSudoku[i][j] << endl;
 				}
+				if(wrongGuess) break;
+
 			}
+			if(wrongGuess) break;
+			if(iter == 1e2) break;
 
 		}
 
+
+
 		// calculate rows, columns, squares
-//		checkSum = checkSums(getRows(inputSudoku)) + checkSums(getRows(inputSudoku)) + checkSums(getRows(inputSudoku));
-		if(checkSum == 3) {
+//		cout << "checksum" << checkSums(getRows(inputSudoku, vec, rows, h, q)) << endl;
+		checkSum = checkSums(getRows(inputSudoku, vec, rows, h, q)) + checkSums(getColumns(inputSudoku, vec, columns, h, q));
+		if(checkSum == 2) {
 			matchingSums = true;
 			cout << "Sudoku solved!" << endl;
 		}
-
+		if(iter == 1e32) break;
 
 	}
 
